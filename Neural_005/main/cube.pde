@@ -80,6 +80,34 @@ class cube{
   }
   
   void update(){
+    int command = receive_command(id);
+    if(id == 0){
+     println(command); 
+    }
+    switch(command) {
+      case 0: 
+        break;
+      case 1: 
+      moveHorizontally(true);
+        break;
+      case 2: 
+      moveHorizontally(false);
+        break;
+      case 3: 
+      moveVertically(true);
+        break;
+      case 4: 
+      moveVertically(false);
+        break;
+      case 5: 
+      rotateMouth(true);
+        break;
+      case 6: 
+       rotateMouth(false);
+        break;
+    }
+    
+    
    feed--;
    if(rotation <= -1){
      rotation = 3;

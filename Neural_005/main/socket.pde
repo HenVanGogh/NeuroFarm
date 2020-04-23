@@ -15,3 +15,8 @@ void im_dead(int id){
   Client s = sockets.get(id);
   s.write(byte(0));
 }
+
+int receive_command(int id){
+  Client s = sockets.get(id);
+  return s.read();
+}
