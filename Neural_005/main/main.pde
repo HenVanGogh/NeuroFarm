@@ -4,11 +4,13 @@ Client myClient;
 int port = 5204;
 ArrayList<Client> sockets;
 
- 
-    PeasyCam cam;
-    float xoff = 0;
-float yoff = 0;
-    
+int[][] cube_table;
+int[][] food_table;
+//PeasyCam cam;
+//float xoff = 0;
+//float yoff = 0;
+int smallReward = 10;
+int bigReward = 100;
     
 class title{
   PVector pos;
@@ -69,48 +71,60 @@ class title{
 //  return new PVector(-1 , -1);
 //}
 
-PVector getPose(int x , int y){
-
+PVector getPose(int x , int y){                 //get position of title on screen
   return new PVector(((height / scale) * (x - 0.5)) + height / scale, ((height / scale) * (y - 0.5)) + height / scale);
+}
+void draw_red_square(int x , int y){
+   PVector v = getPose(x ,y); 
+   fill(255 , 0 , 0);
+   square(v.x , v.y , height / scale);
 }
 
 
-boolean getAvaliable(int x , int y){
-  
+boolean getAvaliable(int x , int y){             //chceck if title is avaliable
   if((x < 0) || (y < 0) || (y > 134) || (x > 239)){
    return false; 
   }
- 
-  int i = x * 135 + y;
-  title t = titles.get(i);
-  return t.awaliable;
+  if(cube_table[x][y] > 0){
+   return false; 
+  }
+  if(food_table[x][y] > 0){
+   return false; 
+  }
+  return true;
 }
 
-int sendKilla(int x , int y , int dir , int team){
-  int revard = 0;
-  for (cube c: cubes) {
-    if((c.xPos == x) && (c.yPos == y)){
-     c.killCommand(dir , team);
-     revard += 100;
-     break;
-    }
+int return_entity(int x , int y){           //  return type of object on title
+  if((x < 0) || (y < 0) || (y > 134) || (x > 239)){
+   return 0; 
   }
-  for (title c: titles) {
-    if((c.xID == x) && (c.yID == y)){
-     c.set_killa();
-     return revard;
-    }
+  if(cube_table[x][y] > 0){
+   return 2; 
   }
-   for (Overlord c: Overlords) {
-    if((c.xPos == x) && (c.yPos == y)){
-     c.killCommand(dir , team);
-     return revard;
+  if(food_table[x][y] > 0){
+   return 4; 
+  }
+  return 1;
+}
+
+int sendKilla(int x , int y , int dir , int team){   //tell cube that its being attacked / eat food
+  if((x < 0) || (y < 0) || (y > 134) || (x > 239)){
+     return 0; 
     }
+  if(cube_table[x][y] > 0){
+   cube c = cubes.get(cube_table[x][y]);
+   c.killCommand(dir , team);
+   return bigReward;
+  }
+  if(food_table[x][y] > 0){
+    food f = foods.get(food_table[x][y]);
+    f.self_grave();
+    return smallReward;
   }
   return 0;
 }
 
-void setAvaliable(int x , int y , boolean mark){
+void setAvaliable(int x , int y , boolean mark){ //mark title as avaliable
   for (title t: titles) {
     if((t.xID == x) && (t.yID == y)){
      t.awaliable = mark; 
@@ -124,6 +138,7 @@ float transy;
 
 ArrayList<title> titles;
 ArrayList<cube> cubes;
+ArrayList<food> foods;
 ArrayList<Overlord> Overlords;
 
 //int grid[][];
@@ -131,11 +146,22 @@ int scale = 128;
 
 void setup(){
 
+  cube_table = new int[240][135];
+  food_table = new int[240][135];
+  
+  for(int i = 0; i < 240; i++){
+    for(int n = 0; n < 135;n++){
+      cube_table[i][n] = 0;
+      food_table[i][n] = 0;
+    }
+  }
+  
   sockets = new ArrayList<Client>();
   socket_begin();
   int xID = 0 , yID = 0;
   titles = new ArrayList<title>();
   cubes = new ArrayList<cube>();
+  foods = new ArrayList<food>();
   Overlords = new ArrayList<Overlord>();
   fullScreen(P3D);
   
@@ -157,17 +183,15 @@ void setup(){
   println(width / round(width * 0.5625 / (scale)));
   println(height / round(height / (scale)));
   
-  cube player = new cube(5 , 5 , height / scale , new PVector(255 , 255 , 0) , 0 , 1);
-  cubes.add(player);
+  //cube player = new cube(5 , 5 , height / scale , new PVector(255 , 255 , 0) , 0 , 1);
+  //cubes.add(player);
   
   for(int i = 0; i < 100; i++){
     add_random_player(random_color() , i , i);
+    add_random_food();
   }
   
-  /*
-  Overlord player3 = new Overlord(127 , 227 , height / scale , new PVector(255 , 0 , 255) , 0 , 0);
-  Overlords.add(player3);
-  */
+
   
  smooth();
   
@@ -179,6 +203,18 @@ void add_random_player(PVector _color, int id , int team){
     int y = round(random(1 , 134));
   
     if(add_player(x , y , _color , id , team) != 0) {
+      break;
+    }
+  }
+}
+
+void add_random_food(){
+  while(true){
+  int x = round(random(1 , 235));
+  int y = round(random(1 , 134));
+    if(getAvaliable(x , y)){
+      food f = new food(x , y);
+      foods.add(f);
       break;
     }
   }
@@ -210,6 +246,21 @@ void draw(){
   //}
   
   
+  for(int i = 0; i < 240; i++){
+  for(int n = 0; n < 135;n++){
+    cube_table[i][n] = 0;
+    food_table[i][n] = 0;
+  }
+}
+for (int i = foods.size()-1; i >= 0; i--) {
+  food f = foods.get(i);
+  food_table[f.xPos][f.yPos] = i;
+}
+for (int i = cubes.size()-1; i >= 0; i--) {
+  cube c = cubes.get(i);
+  cube_table[c.xPos][c.yPos] = i;
+}
+  
     for(Overlord o: Overlords){
     o.display();
     o.update();
@@ -220,9 +271,20 @@ void draw(){
       add_random_player(c.colour , c.id , c.teamId);
       setAvaliable( c.xPos , c.yPos , true);
       cubes.remove(i);
+    }else{
+      c.display();
+      c.update();
     }
-    c.display();
-    c.update();
+  }
+  fill(255 , 255 , 0);
+  for (int i = foods.size()-1; i >= 0; i--) {
+    food f = foods.get(i);
+      if(f.isDead) {
+        foods.remove(i);
+      }else{
+        f.display(); 
+        
+      }
   }
   
 

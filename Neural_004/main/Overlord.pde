@@ -1,14 +1,13 @@
-class cube{
+class Overlord{
  int xPos , yPos;
  int size;
  PVector colour;
  int rotation = 0;
  int id;
- int health = 10;
+ int health = 100;
  int teamId;
- int feed = 100;
   
-  cube(int x , int y , int Size , PVector Color , int Id , int team){
+  Overlord(int x , int y , int Size , PVector Color , int Id , int team){
     xPos = x;
     yPos = y;
     size = Size;
@@ -19,7 +18,6 @@ class cube{
   }
   
   void display(){
-
    PVector pos = getPose(xPos , yPos);
    fill(colour.x , colour.y , colour .z);
    rect(pos.x , pos.y , size , size);
@@ -30,19 +28,19 @@ class cube{
      rotation = 0;
    }
    
-   if(rotation == 2){
+   if(rotation == 3){
      circle(pos.x , pos.y  - size / 2, size / 2);
-   }else if(rotation == 1){
+   }else if(rotation == 2){
      circle(pos.x  - size / 2, pos.y , size / 2);
-   }else if(rotation == 0){
+   }else if(rotation == 1){
      circle(pos.x , pos.y + size / 2 , size / 2);
-   }else if(rotation == 3){
+   }else if(rotation == 0){
      circle(pos.x + size / 2 , pos.y , size / 2);
    }
   }
   
   boolean isDead(){
-    if((health <= 0) || (feed <= 0)){
+    if(health <= 0){
       return true;
     }else{
       return false;
@@ -62,7 +60,6 @@ class cube{
   }
   
   void update(){
-   feed--;
    if(rotation <= -1){
      rotation = 3;
    }else if(rotation >= 4){
@@ -79,11 +76,11 @@ class cube{
      sendKilla(xPos + 1 , yPos , rotation);
    }
    */
-   if(rotation == 1){
+   if(rotation == 3){
      sendKilla(xPos - 1 , yPos  , rotation , teamId);
    }else if(rotation == 2){
      sendKilla(xPos  , yPos - 1 , rotation, teamId);
-   }else if(rotation == 3){
+   }else if(rotation == 1){
      sendKilla(xPos + 1, yPos  , rotation, teamId);
    }else if(rotation == 0){
      sendKilla(xPos  , yPos + 1, rotation, teamId);

@@ -6,7 +6,10 @@ class cube{
  int id;
  int health = 10;
  int teamId;
- int feed = 100;
+ int feed = 10000;
+ int reward = 0;
+ 
+ byte[] vision_table;
   
   cube(int x , int y , int Size , PVector Color , int Id , int team){
     xPos = x;
@@ -16,6 +19,17 @@ class cube{
     id = Id;
     teamId = team;
     setAvaliable(xPos , yPos , false);
+    vision_table = new byte[256];
+    
+    int vision_pointer = 0;
+    for(int i = xPos - 7; i <= xPos + 7; i++){
+      for(int n = yPos - 7; n <= yPos + 7; n++){
+        vision_table[vision_pointer] = byte(return_entity(i , n));
+        vision_pointer++;
+      }
+    }
+    vision_table[225] = byte(reward);
+    send_vision(id , vision_table);
   }
   
   void display(){
@@ -41,11 +55,15 @@ class cube{
    }
   }
   
+  
+  
   boolean isDead(){
     if((health <= 0) || (feed <= 0)){
+      im_dead(id);
       return true;
     }else{
       return false;
+      
     }
   }
   
@@ -68,17 +86,6 @@ class cube{
    }else if(rotation >= 4){
      rotation = 0;
    }
-   /*
-   if(rotation == 3){
-     sendKilla(xPos , yPos - 1 , rotation);
-   }else if(rotation == 2){
-     sendKilla(xPos - 1 , yPos , rotation);
-   }else if(rotation == 1){
-     sendKilla(xPos , yPos + 1 , rotation);
-   }else if(rotation == 0){
-     sendKilla(xPos + 1 , yPos , rotation);
-   }
-   */
    if(rotation == 1){
      sendKilla(xPos - 1 , yPos  , rotation , teamId);
    }else if(rotation == 2){
@@ -88,18 +95,28 @@ class cube{
    }else if(rotation == 0){
      sendKilla(xPos  , yPos + 1, rotation, teamId);
    }
-  }
+   
+   for(int i = 0; i < 256; i++){
+      vision_table[i] = 0;
+    }
     
-  
-  
-  
+    int vision_pointer = 0;
+    for(int i = xPos - 7; i <= xPos + 7; i++){
+      for(int n = yPos - 7; n <= yPos + 7; n++){
+        vision_table[vision_pointer] = byte(return_entity(i , n));
+        vision_pointer++;
+      }
+    }
+    vision_table[225] = byte(reward);
+    send_vision(id , vision_table);
+  }
+
   void rotateMouth(boolean dir){
     if(dir){
      rotation--; 
     }else{
       rotation++;
     }
-    
   }
   
   void moveHorizontally(boolean dir){
@@ -140,4 +157,34 @@ class cube{
   
   
   }
+  
+  
+  
+  
+  
+class food{
+ int xPos , yPos;
+ int size = height / scale;
+ PVector colour = new PVector(255 , 255 , 0);
+ boolean isDead = false;
+  
+  food(int x , int y){
+    xPos = x;
+    yPos = y;
+    setAvaliable(x , y , false);
+  }
+  
+  boolean isDead(){
+    return isDead;
+  }
+  
+  void self_grave(){
+   isDead = true; 
+  }
+  
+  void display(){
+    PVector pos = getPose(xPos , yPos);
+    circle(pos.x , pos.y  , size); 
+  }
+}
   
